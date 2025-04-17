@@ -1,11 +1,9 @@
 const express = require("express");
 const axios = require("axios");
 const https = require("https");
-const serverless = require("serverless-http");
 
 const app = express();
-
-const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 20, timeout: 2000 });
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25, timeout: 2000 });
 
 const fetchText = async (url) => {
   const res = await axios.get(url, {
@@ -51,30 +49,20 @@ async function validateKey(res, key) {
       fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt")
     ]);
 
-    const blockList = block.split("\n");
-    const isBlocked = blockList.some(k => k.trim() === key);
-    if (isBlocked) {
-      return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
-    }
+    const blockList = block.split("\n").map(k => k.trim());
+    if (blockList.includes(key)) return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
 
     const userLine = subs
       .split("\n")
-      .find(line => line.split("|")[0].trim() === key);
+      .map(l => l.trim())
+      .find(l => l.split("|")[0] === key);
 
-    if (!userLine) {
-      return res.status(401).json({ status: "NONE", message: "API key not found." });
-    }
+    if (!userLine) return res.status(401).json({ status: "NONE", message: "API key not found." });
 
     const [userKey, deviceId, expiry, username] = userLine.split("|").map(v => v.trim());
 
-    if (!validDate(expiry)) {
-      return res.status(400).json({ status: "ERROR", message: "Invalid expiry date." });
-    }
-
-    const userBlocked = blockList.some(k => k.trim() === userKey);
-    if (userBlocked) {
-      return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
-    }
+    if (!validDate(expiry)) return res.status(400).json({ status: "ERROR", message: "Invalid expiry date." });
+    if (blockList.includes(userKey)) return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
 
     const isActive = !expired(parseDate(expiry));
     return res.json({
@@ -102,5 +90,3 @@ const parseDate = (d) => {
 const expired = (date) => new Date() > date;
 
 module.exports = app;
-module.exports.handler = serverless(app);
-    
