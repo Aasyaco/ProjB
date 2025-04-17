@@ -103,3 +103,4 @@ const expired = (date) => new Date() > date;
 
 module.exports = app;
 module.exports.handler = serverless(app);
+    
