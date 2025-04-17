@@ -1,4 +1,10 @@
 const serverless = require("serverless-http");
-const app = require("api/index");
+const express = require('express');
+const apiRoutes = require('./api/index.js');
 
-module.exports = serverless(app);
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+app.use('/api', apiRoutes);
+
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
