@@ -1,12 +1,9 @@
-const express = require("express");
 const axios = require("axios");
 const https = require("https");
 
-const app = express();
-
 const httpsAgent = new https.Agent({
   keepAlive: true,
-  maxSockets: 50,
+  maxSockets: 64,
   timeout: 2000,
   rejectUnauthorized: true,
 });
@@ -16,14 +13,15 @@ const fetchText = async (url) => {
     httpsAgent,
     responseType: "text",
     timeout: 2000,
-    headers: { Accept: "text/plain" },
     transformResponse: [(d) => d.trim()],
   });
   return data;
 };
 
-app.get("/", async (req, res) => {
-  const key = req.query.key?.trim();
+module.exports = async (req, res) => {
+  if (!req.url.startsWith("/api")) return res.status(404).send("Not Found");
+
+  const { key } = req.query;
   if (!key) return res.status(400).json({ status: "ERROR", message: "API key is required." });
 
   try {
@@ -33,10 +31,10 @@ app.get("/", async (req, res) => {
     if (primary === "OFF") return res.status(503).json({ status: "MAINTENANCE", message: "Service is temporarily unavailable." });
 
     return res.status(500).json({ status: "ERROR", message: "Invalid primary response." });
-  } catch (err) {
-    return res.status(500).json({ status: "ERROR", message: "Primary fetch failed.", error: err.message });
+  } catch (e) {
+    return res.status(500).json({ status: "ERROR", message: "Primary fetch failed.", error: e.message });
   }
-});
+};
 
 async function handleSecondary(res, key) {
   try {
@@ -46,8 +44,8 @@ async function handleSecondary(res, key) {
     if (status === "CHK") return validateKey(res, key);
 
     return res.status(500).json({ status: "ERROR", message: "Invalid secondary status." });
-  } catch (err) {
-    return res.status(500).json({ status: "ERROR", message: "Secondary fetch failed.", error: err.message });
+  } catch (e) {
+    return res.status(500).json({ status: "ERROR", message: "Secondary fetch failed.", error: e.message });
   }
 }
 
@@ -55,11 +53,11 @@ async function validateKey(res, key) {
   try {
     const [block, subs] = await Promise.all([
       fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"),
-      fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt")
+      fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"),
     ]);
 
     const blockList = block.split("\n").map((k) => k.trim());
-    if (blockList.includes(key)) return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
+    if (blockList.find((k) => k === key)) return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
 
     const userLine = subs
       .split("\n")
@@ -71,7 +69,7 @@ async function validateKey(res, key) {
     const [userKey, deviceId, expiry, username] = userLine.split("|").map((v) => v.trim());
 
     if (!validDate(expiry)) return res.status(400).json({ status: "ERROR", message: "Invalid expiry date." });
-    if (blockList.includes(userKey)) return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
+    if (blockList.find((k) => k === userKey)) return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
 
     const active = !expired(parseDate(expiry));
     return res.json({
@@ -80,8 +78,8 @@ async function validateKey(res, key) {
       device: deviceId,
       expires: expiry
     });
-  } catch (err) {
-    return res.status(500).json({ status: "ERROR", message: "Key validation failed.", error: err.message });
+  } catch (e) {
+    return res.status(500).json({ status: "ERROR", message: "Key validation failed.", error: e.message });
   }
 }
 
@@ -97,5 +95,4 @@ const parseDate = (d) => {
 };
 
 const expired = (d) => new Date() > d;
-
-module.exports = app;
+                                                                 
