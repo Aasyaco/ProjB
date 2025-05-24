@@ -1,29 +1,21 @@
-const axios = require("axios");
-const https = require("https");
+import axios from "axios";
 
-const httpsAgent = new https.Agent({
-  keepAlive: true,
-  maxSockets: 64,
-  timeout: 2000,
-  rejectUnauthorized: true
-});
-
-const fetchText = async (url) => {
-  const { data } = await axios.get(url, {
-    httpsAgent,
-    responseType: "text",
+const fetchText = async (url) =>
+  axios.get(url, {
     timeout: 2000,
-    transformResponse: [(d) => d.trim()]
-  });
-  return data;
-};
+    responseType: "text",
+    transformResponse: [(d) => d.trim()],
+  }).then(res => res.data);
 
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+
   const key = req.query.key;
   if (!key) return res.status(400).json({ status: "ERROR", message: "API key is required." });
 
   try {
-    const primary = await fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch1.txt");
+    const primaryPromise = fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch1.txt");
+    const primary = await timeoutPromise(primaryPromise, 2500);
     if (primary === "ON") return handleSecondary(res, key);
     if (primary === "OFF") return res.status(503).json({ status: "MAINTENANCE", message: "Service is temporarily unavailable." });
     return res.status(500).json({ status: "ERROR", message: "Invalid primary response." });
@@ -34,7 +26,8 @@ export default async function handler(req, res) {
 
 async function handleSecondary(res, key) {
   try {
-    const status = await fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch2.txt");
+    const statusPromise = fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch2.txt");
+    const status = await timeoutPromise(statusPromise, 2000);
     if (status === "START") return res.json({ status: "ACTIVE", message: "Service is running." });
     if (status === "CHK") return validateKey(res, key);
     return res.status(500).json({ status: "ERROR", message: "Invalid secondary status." });
@@ -45,25 +38,35 @@ async function handleSecondary(res, key) {
 
 async function validateKey(res, key) {
   try {
-    const [block, subs] = await Promise.all([
+    const [blockRaw, subsRaw] = await Promise.all([
       fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"),
       fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt")
     ]);
-    const blockList = block.split("\n").map((k) => k.trim());
-    if (blockList.find((k) => k === key)) return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
-    const userLine = subs.split("\n").map((line) => line.trim()).find((line) => line.split("|")[0] === key);
+
+    const blockList = new Set(blockRaw.split("\n").map(line => line.trim()));
+    if (blockList.has(key)) return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
+
+    const userLine = subsRaw.split("\n").map(line => line.trim()).find(line => line.startsWith(key + "|"));
     if (!userLine) return res.status(401).json({ status: "NONE", message: "API key not found." });
-    const [userKey, deviceId, expiry, username] = userLine.split("|").map((v) => v.trim());
-    if (!validDate(expiry)) return res.status(400).json({ status: "ERROR", message: "Invalid expiry date." });
-    if (blockList.find((k) => k === userKey)) return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
-    const active = !expired(parseDate(expiry));
-    return res.json({ status: active ? "ACTIVE" : "EXPIRED", user: username, device: deviceId, expires: expiry });
+
+    const [userKey, deviceId, expiry, username] = userLine.split("|").map(x => x.trim());
+    if (!isValidDate(expiry)) return res.status(400).json({ status: "ERROR", message: "Invalid expiry date." });
+
+    if (blockList.has(userKey)) return res.status(403).json({ status: "BLOCKED", message: "Access denied." });
+
+    const active = new Date() <= parseDate(expiry);
+    return res.json({
+      status: active ? "ACTIVE" : "EXPIRED",
+      user: username,
+      device: deviceId,
+      expires: expiry
+    });
   } catch (e) {
     return res.status(500).json({ status: "ERROR", message: "Key validation failed.", error: e.message });
   }
 }
 
-const validDate = (d) => {
+const isValidDate = (d) => {
   const [day, month, year] = d.split("-");
   const date = new Date(`${year}-${month}-${day}`);
   return !isNaN(date.getTime());
@@ -74,5 +77,18 @@ const parseDate = (d) => {
   return new Date(`${year}-${month}-${day}`);
 };
 
-const expired = (d) => new Date() > d;
+const timeoutPromise = (promise, ms) => {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Timeout")), ms);
+    promise
+      .then((val) => {
+        clearTimeout(timer);
+        resolve(val);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+};
       
