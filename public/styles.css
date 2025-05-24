@@ -1,0 +1,96 @@
+:root {
+  --bg: #121212;
+  --accent: #0af;
+  --text: #fff;
+  --card: #1e1e1e;
+  --success: #16c784;
+  --error: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  overflow: hidden;
+  animation: fadeIn 1.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.card {
+  background: var(--card);
+  padding: 2rem 3rem;
+  border-radius: 16px;
+  max-width: 600px;
+  box-shadow: 0 0 40px rgba(0, 170, 255, 0.15);
+  animation: slideUp 1.4s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+h1 {
+  color: var(--accent);
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+p {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  opacity: 0.9;
+}
+
+code {
+  background: #0af2;
+  padding: 0.3em 0.6em;
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
+input {
+  padding: 0.5rem 1rem;
+  width: 100%;
+  margin-top: 1rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+}
+
+button {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  border: none;
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: #08c;
+}
+
+.status {
+  margin-top: 1rem;
+  font-weight: bold;
+}
