@@ -3,39 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>API Service Status</title>
-  <meta name="description" content="API key validation service - fast, secure, reliable.">
+  <title>API Validation Service</title>
+  <meta name="description" content="Lightning-fast API key validation service on Vercel" />
+  <link rel="stylesheet" href="/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      padding: 2rem;
-      background: #f8f9fa;
-      color: #212529;
-    }
-    h1 {
-      font-weight: 600;
-    }
-    .container {
-      max-width: 720px;
-      margin: auto;
-    }
-    code {
-      background: #eee;
-      padding: 0.3em 0.6em;
-      border-radius: 4px;
-    }
-  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Welcome to the API Validation Service</h1>
-    <p>This API validates API keys in real-time with no caching and high availability.</p>
+  <div class="card">
+    <h1>API Key Validation</h1>
     <p>Use the endpoint: <code>/api?key=YOUR_API_KEY</code></p>
-    <p>Hosted on <strong>Vercel</strong> for lightning-fast edge delivery.</p>
-    <hr />
-    <p><strong>Status:</strong> <a href="/api?key=test" target="_blank">Check API</a></p>
+    <p>Validate your API key below:</p>
+    <input type="text" id="keyInput" placeholder="Enter API Key" />
+    <button onclick="checkStatus()">Check Status</button>
+    <p class="status" id="statusText"></p>
   </div>
+
+  <script>
+    async function checkStatus() {
+      const key = document.getElementById("keyInput").value.trim();
+      const statusText = document.getElementById("statusText");
+
+      if (!key) {
+        statusText.style.color = "var(--error)";
+        statusText.textContent = "Please enter an API key.";
+        return;
+      }
+
+      statusText.textContent = "Checking...";
+      statusText.style.color = "var(--accent)";
+      try {
+        const res = await fetch(`/api?key=${encodeURIComponent(key)}`);
+        const json = await res.json();
+
+        if (json.status === "ACTIVE") {
+          statusText.style.color = "var(--success)";
+        } else if (json.status === "EXPIRED" || json.status === "BLOCKED") {
+          statusText.style.color = "var(--error)";
+        } else {
+          statusText.style.color = "orange";
+        }
+        statusText.textContent = `${json.status}: ${json.message || json.user || "Response received"}`;
+      } catch (err) {
+        statusText.style.color = "var(--error)";
+        statusText.textContent = "Error checking status.";
+      }
+    }
+  </script>
 </body>
 </html>
