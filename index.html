@@ -1,18 +1,41 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Key Validation API</title>
-    <style>
-      body { font-family: sans-serif; padding: 2rem; line-height: 1.6; background: #f9f9f9; }
-      code { background: #eee; padding: 0.2rem 0.4rem; border-radius: 4px; }
-    </style>
-  </head>
-  <body>
-    <h1>Key Validation API</h1>
-    <p>Use the endpoint below to validate your key:</p>
-    <p><code>https://your-domain.vercel.app/api?key=YOUR_KEY</code></p>
-    <p>Status will be returned based on key validity and system state.</p>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>API Service Status</title>
+  <meta name="description" content="API key validation service - fast, secure, reliable.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background: #f8f9fa;
+      color: #212529;
+    }
+    h1 {
+      font-weight: 600;
+    }
+    .container {
+      max-width: 720px;
+      margin: auto;
+    }
+    code {
+      background: #eee;
+      padding: 0.3em 0.6em;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to the API Validation Service</h1>
+    <p>This API validates API keys in real-time with no caching and high availability.</p>
+    <p>Use the endpoint: <code>/api?key=YOUR_API_KEY</code></p>
+    <p>Hosted on <strong>Vercel</strong> for lightning-fast edge delivery.</p>
+    <hr />
+    <p><strong>Status:</strong> <a href="/api?key=test" target="_blank">Check API</a></p>
+  </div>
+</body>
 </html>
