@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2020",                  // JS version output
+    "module": "commonjs",                // module system (Node.js commonjs)
+    "moduleResolution": "node",          // resolves modules like Node.js
+    "outDir": "dist",                    // compiled JS output folder
+    "rootDir": "api",                    // source TS folder (adjust if needed)
+    "strict": true,                     // enable strict type checking
+    "esModuleInterop": true,             // compatibility for imports
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": ["api/**/*.ts"],            // all TS files under api/
+  "exclude": ["node_modules"]
+}
