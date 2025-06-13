@@ -16,7 +16,7 @@
     "rate-limiter-flexible": "^2.3.0"
   },
   "devDependencies": {
-    "@types/helmet": "^7.0.0",
+    "@types/helmet": "^4.0.0",
     "@types/node": "^20.5.1",
     "typescript": "^5.8.3",
     "node-gyp": "^9.3.1"
