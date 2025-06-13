@@ -1,5 +1,4 @@
-import axios from "axios";
-
+const axios = require("axios");
 const fetchText = async (url) =>
   axios.get(url, {
     timeout: 2000,
@@ -7,7 +6,7 @@ const fetchText = async (url) =>
     transformResponse: [(d) => d.trim()],
   }).then(res => res.data);
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
   const key = req.query.key;
