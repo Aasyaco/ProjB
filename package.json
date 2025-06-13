@@ -1,7 +1,7 @@
 {
-  "name": "projb-fac",
+  "name": "projb-server",
   "version": "1.0.0",
-  "description": "Facebook Account Checker with native C++ and Rust addons",
+  "description": "API server with native C++ and Rust addons",
   "main": "api/index.js",
   "type": "module",
   "scripts": {
@@ -11,6 +11,8 @@
     "test": "echo \"No tests specified\" && exit 0"
   },
   "keywords": [
+    "api",
+    "server",
     "native-addon",
     "rust",
     "cpp",
@@ -21,10 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^1.5.0",
-    "express": "^4.18.2",
-    "napi": "^2.0.0",
-    "napi-derive": "^2.0.0",
-    "chrono": "^0.4.0"
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "typescript": "^5.1.6",
