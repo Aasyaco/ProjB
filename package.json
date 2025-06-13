@@ -1,18 +1,36 @@
 {
-  "name": "vercel-api-validator",
+  "name": "projb-fac",
   "version": "1.0.0",
-  "description": "Lightning-fast API key validator with static frontend",
+  "description": "Facebook Account Checker with native C++ and Rust addons",
   "main": "api/index.js",
+  "type": "module",
   "scripts": {
-    "dev": "vercel dev",
-    "start": "vercel dev",
-    "build": "echo 'No build required'",
-    "test": "echo 'No tests'"
+    "build": "tsc",
+    "start": "node api/index.js",
+    "dev": "nodemon --watch api --exec node api/index.js",
+    "test": "echo \"No tests specified\" && exit 0"
   },
-  "author": "GEORGE",
+  "keywords": [
+    "native-addon",
+    "rust",
+    "cpp",
+    "typescript",
+    "express"
+  ],
+  "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.5.0",
+    "express": "^4.18.2",
+    "napi": "^2.0.0",
+    "napi-derive": "^2.0.0",
+    "chrono": "^0.4.0"
   },
-  "keywords": []
+  "devDependencies": {
+    "typescript": "^5.1.6",
+    "nodemon": "^3.0.1",
+    "@types/node": "^20.4.2",
+    "@types/express": "^4.17.17"
+  },
+  "gypfile": true
 }
