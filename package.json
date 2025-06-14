@@ -4,12 +4,13 @@
   "description": "ProjB server application",
   "main": "api/index.js",
   "scripts": {
-    "start": "node api/index.js",
-    "build": "npm run build:native && npm run build:ts",
-    "build:native": "npm run build:cpp",
-    "build:cpp": "cd && cd native/cpp-addon && node-gyp rebuild",
-    "build:ts": "tsc",
-    "clean": "cd && cd native/cpp-addon && node-gyp clean"
+      "build:cpp": "cd native/cpp-addon && npm install && npm run rebuild",
+      "build:native": "npm run build:cpp && npm run build:rust",
+      "build": "npm run build:native && npm run build:ts",
+      "build:rust": "cd native/rust-addon && cargo build --release",
+      "build:ts": "tsc"
+}
+
   },
   "engines": {
     "node": ">=18.17.0"
