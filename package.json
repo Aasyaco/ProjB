@@ -8,10 +8,10 @@
     "start": "node api/index.js",
     "build": "npm run build:native && npm run build:ts",
     "build:native": "npm run build:cpp && npm run build:rust",
-    "build:cpp": "cd native/cpp-addon && node-gyp rebuild",
-    "build:rust": "cd native/rust-addon && cargo build --release",
+    "build:cpp": "cd ../native/cpp-addon && node-gyp rebuild",
+    "build:rust": "cd ../native/rust-addon && cargo build --release",
     "build:ts": "tsc",
-    "clean": "cd native/cpp-addon && node-gyp clean"
+    "clean": "cd ../native/cpp-addon && node-gyp clean"
   },
   "dependencies": {
     "express": "^4.18.2",
