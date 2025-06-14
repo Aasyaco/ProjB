@@ -5,7 +5,7 @@
     "preinstall": "python3 -c \"import distutils\" 2>/dev/null || python3 -m ensurepip --upgrade && python3 -m pip install --upgrade setuptools",
     "install:rust": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
     "build:native": "npm run build:cpp && npm run build:rust",
-    "build:cpp": "cd native/cpp-addon && npm install && npm run rebuild",
+    "build:cpp": "export HOME=/vercel && cd native/cpp-addon && npm install && npm run rebuild",
     "build:rust": "source $HOME/.cargo/env && cd native/rust-validator/src && cargo build --release",
     "build": "npm run install:rust && npm run build:native && npm run build:ts",
     "build:ts": "tsc -p tsconfig.json",
