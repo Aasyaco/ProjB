@@ -13,7 +13,7 @@
     "install:rust": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
     "build:native": "npm run build:cpp && npm run build:rust",
     "build:cpp": "export HOME=/vercel && cd native/cpp-addon && npm install && npm run rebuild",
-    "build:rust": "cd native/rust-validator/src && cargo build --release && cp $(find target/release -maxdepth 1 -name '*.node' | head -n 1) ."
+    "build:rust": "cd native/rust-validator/src && cargo build --release && rm -f index.node && FILE=$(find target/release -maxdepth 1 -name '*.node' | head -n 1) && cp \"$FILE\" index.node && echo \"Built → $(pwd)/index.node\""
     "build:ts": "tsc -p tsconfig.json",
     "build": "npm run install:rust && npm run build:native && npm run build:ts",
     "rebuild": "node-gyp rebuild",
