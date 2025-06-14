@@ -1,7 +1,6 @@
 import express, { Request, Response } from "express";
 import helmet from "helmet";
 import rateLimit from "rate-limiter-flexible";
-import axios from "axios";
 // Use CommonJS require for native modules
 const { isBlocked } = require("../native/cpp-addon/build/Release/addon.node");
 const { validateUser } = require("../native/rust-validator/index.node");
@@ -32,7 +31,7 @@ app.get("/api", async (req: Request, res: Response) => {
     return res.status(403).json({ status: "ERROR", message: "HTTPS required" });
   }
 
-  // Ensure `key` is of type string
+  // Ensure `key` is a string
   const key = typeof req.query.key === "string" ? req.query.key : undefined;
 
   if (!key) {
