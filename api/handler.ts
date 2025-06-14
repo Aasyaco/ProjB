@@ -33,7 +33,7 @@ app.get("/api", async (req: Request, res: Response) => {
     return res.status(403).json({ status: "ERROR", message: "HTTPS required" });
   }
 
-  const key: string | undefined = req.query.key;
+  const key = req.query.key as string | undefined;
   if (!key) return res.status(400).json({ status: "ERROR", message: "API key required" });
 
   try {
