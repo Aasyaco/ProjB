@@ -9,7 +9,6 @@ keywords = ["napi", "node", "ffi", "rust", "validator"]
 
 [lib]
 crate-type = ["cdylib"]
-path = "src/lib.rs"
 
 [dependencies]
 napi = "2"
