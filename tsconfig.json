@@ -11,8 +11,8 @@
     "skipLibCheck": true,                // Skip type checking for declaration files
     "sourceMap": true,                   // Generate source maps for debugging
     "resolveJsonModule": true,           // Allows importing JSON files
-    "noUnusedLocals": true,              // Warn about unused local variables
-    "noUnusedParameters": true,          // Warn about unused function parameters
+    "noUnusedLocals": false,              // Warn about unused local variables
+    "noUnusedParameters": false,          // Warn about unused function parameters
     "strictNullChecks": false            // Skip null and undefined type checks
   },
   "include": ["api/**/*.ts"],            // Include all TypeScript files in api/
