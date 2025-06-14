@@ -17,7 +17,7 @@
 
     "build:cpp": "export HOME=/vercel && cd native/cpp-addon && npm install && npm run rebuild",
 
-    "build:rust": "export HOME=/vercel && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env && cd native/rust-validator/src && cargo build --release && ls ../*/*/*.node && FILE=$(find ../*/*/* -maxdepth 1 -name '*.node' | head -n 1) && echo \"Built → $FILE\" && cp \"$FILE\" index.node",
+    "build:rust": "export HOME=/vercel && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env && cd native/rust-validator/src && cargo build --release && ls */*/*.node && FILE=$(find */*/* -maxdepth 1 -name '*.node' | head -n 1) && echo \"Built → $FILE\" && cp \"$FILE\" index.node",
 
     "build:ts": "tsc -p tsconfig.json",
 
