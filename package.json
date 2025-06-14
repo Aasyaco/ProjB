@@ -13,7 +13,7 @@
     "install:rust": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
     "build:native": "npm run build:cpp && npm run build:rust",
     "build:cpp": "export HOME=/vercel && cd native/cpp-addon && npm install && npm run rebuild",
-    "build:rust": "cd native/rust-validator && ~/.cargo/bin/cargo build --release",
+    "build:rust": "cd native/rust-validator/src && ~/.cargo/bin/cargo build --release",
     "build:ts": "tsc -p tsconfig.json",
     "build": "npm run install:rust && npm run build:native && npm run build:ts",
     "rebuild": "node-gyp rebuild",
