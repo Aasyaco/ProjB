@@ -2,12 +2,13 @@
 name = "rust_validator"
 version = "0.1.0"
 edition = "2021"
-description = "Rust-based N-API addon for Facebook Account Validator"
+description = "Rust-based N-API addon for server Validator"
 license = "MIT"
 repository = "https://github.com/Aasyaco/ProjB"
 keywords = ["napi", "node", "ffi", "rust", "validator"]
 
 [lib]
+name = "index"
 crate-type = ["cdylib"]
 
 [dependencies]
