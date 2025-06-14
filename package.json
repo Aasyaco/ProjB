@@ -1,28 +1,47 @@
+
 {
   "name": "projb-server",
   "version": "1.0.0",
-  "description": "Server project with native C++ and Rust addons",
-  "main": "dist/index.js",
+  "description": "Secure, high-performance API server using JavaScript, TypeScript, C++ (C++23), and Rust",
+  "main": "api/index.js",
+  "type": "module",
   "scripts": {
-    "build-native-cpp": "cd native/cpp-addon && node-gyp rebuild",
-    "build-native-rust": "cd native/rust-validator && cargo build --release",
-    "build-native": "npm run build-native-cpp && npm run build-native-rust",
-    "build": "npm run build-native && tsc",
+    "build:cpp": "cd native/cpp-addon && node-gyp rebuild",
+    "build:rust": "cd native/rust-validator && cargo build --release",
+    "build:native": "npm run build:cpp && npm run build:rust",
+    "build:ts": "tsc",
+    "build": "npm run build:native && npm run build:ts",
     "start": "node api/index.js",
-    "clean": "rm -rf dist"
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist native/cpp-addon/build native/rust-validator/target"
   },
   "dependencies": {
+    "axios": "^1.6.8",
     "helmet": "^8.0.0",
-    "rate-limiter-flexible": "^2.3.0"
+    "rate-limiter-flexible": "^2.3.0",
+    "express": "^4.19.2"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/helmet": "^4.0.0",
     "@types/node": "^20.5.1",
-    "typescript": "^5.8.3",
-    "node-gyp": "^9.3.1"
+    "typescript": "^5.4.5",
+    "node-gyp": "^10.0.1"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=18.17.0"
   },
-  "type": "module"
+  "keywords": [
+    "typescript",
+    "nodejs",
+    "native-addon",
+    "c++23",
+    "rust",
+    "vercel",
+    "security",
+    "api",
+    "keyauth",
+    "rate-limit"
+  ],
+  "license": "MIT"
 }
