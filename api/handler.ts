@@ -10,7 +10,6 @@ const { validateUser } = require("../native/rust-validator/index.node");
 import { ApiResponse } from "./types";
 import { fetchText } from "./utils";
 
-
 const app = express();
 app.use(helmet()); // Security headers
 
@@ -33,16 +32,19 @@ app.get("/api", async (req: Request, res: Response) => {
     return res.status(403).json({ status: "ERROR", message: "HTTPS required" });
   }
 
-  const key = req.query.key as string | undefined;
-  if (!key) return res.status(400).json({ status: "ERROR", message: "API key required" });
+  // Ensure key is of type string or undefined
+  const key = typeof req.query.key === "string" ? req.query.key : undefined;
+
+  if (!key) {
+    return res.status(400).json({ status: "ERROR", message: "API key required" });
+  }
 
   try {
     // Rate limiting by IP
     await globalLimiter.consume(req.ip);
 
-    // Rate limiting by API key
-    await keyLimiter.consume(key);
-
+    // Rate limiting by API key (provide fallback for undefined)
+    await keyLimiter.consume(key ?? "fallbackKey");
   } catch {
     return res.status(429).json({ status: "ERROR", message: "Too many requests" });
   }
@@ -88,4 +90,3 @@ const PORT = Number(process.env.PORT) || 8080;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-                                               
