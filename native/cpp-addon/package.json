@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "node-gyp rebuild",
+    "rebuild": "node-gyp rebuild",
     "clean": "node-gyp clean"
   },
   "dependencies": {
