@@ -1,0 +1,7 @@
+{
+  "name": "cpp-addon",
+  "version": "1.0.0",
+  "dependencies": {
+    "node-addon-api": "^5.0.0"
+  }
+}
