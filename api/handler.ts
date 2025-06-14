@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import rateLimit from "rate-limiter-flexible";
 // Use CommonJS require for native modules
@@ -9,56 +9,62 @@ const { validateUser } = require("../native/rust-validator/index.node");
 import { ApiResponse } from "./types";
 import { fetchText } from "./utils";
 
-const app = express();
-app.use(helmet()); // Security headers
-
 // Global rate limiter (per IP)
 const globalLimiter = new rateLimit.RateLimiterMemory({
   points: 100, // max 100 requests
   duration: 60, // per minute
 });
 
+// Per-key rate limiter
 const keyLimiter = new rateLimit.RateLimiterMemory({
   points: 10, // max 10 requests per key per minute
   duration: 60,
 });
 
-app.get("/api", async (req: Request, res: Response) => {
+// Exported handler for Express or serverless environments
+export default async function handler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   res.setHeader("Cache-Control", "no-store");
 
-  // Enforce HTTPS
-  if (req.protocol !== "https" && process.env.NODE_ENV === "production") {
-    return res.status(403).json({ status: "ERROR", message: "HTTPS required" });
-  }
-
-  // Ensure `key` is a string
-  const key = typeof req.query.key === "string" ? req.query.key : undefined;
-
-  if (!key) {
-    return res.status(400).json({ status: "ERROR", message: "API key required" });
-  }
-
   try {
+    // Enforce HTTPS in production
+    if (req.protocol !== "https" && process.env.NODE_ENV === "production") {
+      return res.status(403).json({ status: "ERROR", message: "HTTPS required" });
+    }
+
+    // Ensure `key` is a string
+    const key = typeof req.query.key === "string" ? req.query.key : undefined;
+    if (!key) {
+      return res.status(400).json({ status: "ERROR", message: "API key required" });
+    }
+
     // Rate limiting by IP
     await globalLimiter.consume(req.ip);
 
-    // Rate limiting by API key (skip if undefined)
-    if (key) {
-      await keyLimiter.consume(key);
-    }
-  } catch {
-    return res.status(429).json({ status: "ERROR", message: "Too many requests" });
-  }
+    // Rate limiting by API key
+    await keyLimiter.consume(key);
 
-  try {
-    const primary = await fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch1.txt");
-    if (primary === "OFF") return res.status(503).json({ status: "MAINTENANCE" });
-    if (primary !== "ON") return res.status(500).json({ status: "ERROR", message: "Invalid system state" });
+    // Fetch system state
+    const primary = await fetchText(
+      "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch1.txt"
+    );
+    if (primary === "OFF")
+      return res.status(503).json({ status: "MAINTENANCE" });
+    if (primary !== "ON")
+      return res.status(500).json({ status: "ERROR", message: "Invalid system state" });
 
-    const status = await fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch2.txt");
+    // Fetch API status
+    const status = await fetchText(
+      "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch2.txt"
+    );
     if (status === "START") return res.json({ status: "ACTIVE" });
-    if (status !== "CHK") return res.status(500).json({ status: "ERROR", message: "Invalid status" });
+    if (status !== "CHK")
+      return res.status(500).json({ status: "ERROR", message: "Invalid status" });
 
+    // Fetch blocklist and subscriptions
     const [blockRaw, subsRaw] = await Promise.all([
       fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"),
       fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"),
@@ -88,12 +94,9 @@ app.get("/api", async (req: Request, res: Response) => {
 
     return res.json(userInfo);
   } catch (err) {
+    // Log and forward error to Express error middleware if present
     console.error("API error:", err);
+    if (typeof next === "function") return next(err);
     return res.status(500).json({ status: "ERROR", message: "Internal server error" });
   }
-});
-
-const PORT = Number(process.env.PORT) || 8080;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+}
