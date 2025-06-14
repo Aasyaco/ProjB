@@ -32,7 +32,7 @@ app.get("/api", async (req: Request, res: Response) => {
     return res.status(403).json({ status: "ERROR", message: "HTTPS required" });
   }
 
-  // Ensure key is of type string or undefined
+  // Ensure `key` is of type string
   const key = typeof req.query.key === "string" ? req.query.key : undefined;
 
   if (!key) {
@@ -43,8 +43,10 @@ app.get("/api", async (req: Request, res: Response) => {
     // Rate limiting by IP
     await globalLimiter.consume(req.ip);
 
-    // Rate limiting by API key (provide fallback for undefined)
-    await keyLimiter.consume(key ?? "fallbackKey");
+    // Rate limiting by API key (skip if undefined)
+    if (key) {
+      await keyLimiter.consume(key);
+    }
   } catch {
     return res.status(429).json({ status: "ERROR", message: "Too many requests" });
   }
@@ -69,7 +71,13 @@ app.get("/api", async (req: Request, res: Response) => {
     }
 
     // Rust addon validates user, expiry, device, and IP binding
-    const userInfo: ApiResponse = validateUser(key, subsRaw, blockRaw, req.ip, String(req.headers["user-agent"] || ""));
+    const userInfo: ApiResponse = validateUser(
+      key,
+      subsRaw,
+      blockRaw,
+      req.ip,
+      String(req.headers["user-agent"] || "")
+    );
 
     if (userInfo.status === "EXPIRED") {
       return res.status(403).json({ status: "EXPIRED", message: "API key expired" });
