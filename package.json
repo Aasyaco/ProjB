@@ -4,13 +4,11 @@
   "description": "ProjB server application",
   "main": "api/index.js",
   "scripts": {
-      "build:cpp": "cd native/cpp-addon && npm install && npm run rebuild",
-      "build:native": "npm run build:cpp && npm run build:rust",
-      "build": "npm run build:native && npm run build:ts",
-      "build:rust": "cd native/rust-addon && cargo build --release",
-      "build:ts": "tsc"
-}
-
+    "build:cpp": "cd native/cpp-addon && npm install && npm run rebuild",
+    "build:native": "npm run build:cpp && npm run build:rust",
+    "build": "npm run build:native && npm run build:ts",
+    "build:rust": "cd native/rust-addon && cargo build --release",
+    "build:ts": "tsc"
   },
   "engines": {
     "node": ">=18.17.0"
