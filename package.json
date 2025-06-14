@@ -10,6 +10,8 @@
     "build": "npm run install:rust && npm run build:native && npm run build:ts",
     "build:ts": "tsc -p tsconfig.json",
     "rebuild": "node-gyp rebuild"
+    "dev": "node api/index.js",
+    "start": "node api/index.js"
   },
   "engines": {
     "node": ">=18.17.0"
