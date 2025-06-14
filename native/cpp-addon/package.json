@@ -1,0 +1,19 @@
+{
+  "name": "cpp-addon",
+  "version": "1.0.0",
+  "description": "Native C++ addon with N-API",
+  "main": "index.js",
+  "scripts": {
+    "build": "node-gyp rebuild",
+    "rebuild": "node-gyp rebuild",
+    "clean": "node-gyp clean"
+  },
+  "dependencies": {
+    "node-addon-api": "^5.0.0"
+  },
+  "gypfile": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
