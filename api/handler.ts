@@ -2,10 +2,14 @@ import express, { Request, Response } from "express";
 import helmet from "helmet";
 import rateLimit from "rate-limiter-flexible";
 import axios from "axios";
-import { isBlocked } from "../native/cpp-addon/build/Release/addon.node";
-import { validateUser } from "../native/rust-validator/index.node";
+// Use CommonJS require for native modules
+const { isBlocked } = require("../native/cpp-addon/build/Release/addon.node");
+const { validateUser } = require("../native/rust-validator/index.node");
+
+// TypeScript-compatible imports for other modules
 import { ApiResponse } from "./types";
 import { fetchText } from "./utils";
+
 
 const app = express();
 app.use(helmet()); // Security headers
