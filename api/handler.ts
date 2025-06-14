@@ -3,7 +3,7 @@ import helmet from "helmet";
 import rateLimit from "rate-limiter-flexible";
 // Use CommonJS require for native modules
 const { isBlocked } = require("../native/cpp-addon/build/Release/addon.node");
-const { validateUser } = require("../native/rust-validator/index.node");
+const { validateUser } = require("../native/rust-validator/src/index.node");
 
 // TypeScript-compatible imports for other modules
 import { ApiResponse } from "./types";
