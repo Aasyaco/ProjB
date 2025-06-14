@@ -8,7 +8,7 @@
     "build:cpp": "cd native/cpp-addon && npm install && npm run rebuild",
     "build:native": "npm run build:cpp && npm run build:rust",
     "build": "npm run build:native && npm run build:ts",
-    "build:rust": "cd native/rust-addon && cargo build --release",
+    "build:rust": "cd native/rust-validator/src && cargo build --release",
     "build:ts": "tsc"
   },
   "engines": {
