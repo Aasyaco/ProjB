@@ -39,7 +39,7 @@ export default async function handler(
     if (!key) {
       return res.status(400).json({ status: "ERROR", message: "API key required" });
     }
-    const safeKey: string = key;
+    const safeKey: string = key!;
 
     // Rate limiting by IP and key
     try {
@@ -78,13 +78,13 @@ export default async function handler(
     }
 
     // Validate user
-    const userInfo: ApiResponse = validateUser(
+    const userInfo = validateUser(
       safeKey,
       subsRaw,
       blockRaw,
       req.ip,
       String(req.headers["user-agent"] || "")
-    );
+    ) as ApiResponse;
 
     if (userInfo.status === "EXPIRED") {
       return res.status(403).json({ status: "EXPIRED", message: "API key expired" });
