@@ -8,13 +8,13 @@ import { fetchText } from "./utils";
 
 // Global rate limiter (per IP)
 const globalLimiter = new RateLimiterMemory({
-  points: 100, // max 100 requests
-  duration: 60, // per minute
+  points: 100,
+  duration: 60,
 });
 
 // Per-key rate limiter
 const keyLimiter = new RateLimiterMemory({
-  points: 10, // max 10 requests per key per minute
+  points: 10,
   duration: 60,
 });
 
@@ -39,11 +39,12 @@ export default async function handler(
     if (!key) {
       return res.status(400).json({ status: "ERROR", message: "API key required" });
     }
+    const safeKey: string = key;
 
     // Rate limiting by IP and key
     try {
       await globalLimiter.consume(req.ip);
-      await keyLimiter.consume(key);
+      await keyLimiter.consume(safeKey);
     } catch {
       return res.status(429).json({ status: "ERROR", message: "Too many requests" });
     }
@@ -72,18 +73,18 @@ export default async function handler(
     ]);
 
     // Check blocklist
-    if (isBlocked(key, blockRaw)) {
+    if (isBlocked(safeKey, blockRaw)) {
       return res.status(403).json({ status: "BLOCKED", message: "Key blocked" });
     }
 
     // Validate user
-    const userInfo: ApiResponse = validateUser(
-      key,
+    const userInfo = validateUser(
+      safeKey,
       subsRaw,
       blockRaw,
       req.ip,
       String(req.headers["user-agent"] || "")
-    );
+    ) as ApiResponse;
 
     if (userInfo.status === "EXPIRED") {
       return res.status(403).json({ status: "EXPIRED", message: "API key expired" });
