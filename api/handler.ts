@@ -2,8 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import rateLimit from "rate-limiter-flexible";
 // Use CommonJS require for native modules
-const { isBlocked } = require("../native/cpp-addon/build/Release/addon.node");
-const { validateUser } = require("../native/rust-validator/src/index.node");
+const { isBlocked } = require("./helper2.ts");
+const { validateUser } = require("./helper1.ts");
 
 // TypeScript-compatible imports for other modules
 import { ApiResponse } from "./types";
