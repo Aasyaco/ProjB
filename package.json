@@ -10,8 +10,19 @@
   "scripts": {
     "build": "tsc",
     "dev": "ts-node-dev --respawn --transpile-only api/index.ts",
-    "start": "node api/index.js"
+    "start": "node api/index.js",
+    "clean": "rm -rf dist"
   },
+  "main": "api/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aasyaco/ProjB.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Aasyaco/ProjB/issues"
+  },
+  "homepage": "https://github.com/Aasyaco/ProjB#readme",
   "dependencies": {
     "axios": "^1.6.8",
     "express": "^4.18.2",
