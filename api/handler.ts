@@ -2,8 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import rateLimit from "rate-limiter-flexible";
 // Use CommonJS require for native modules
-const { isBlocked } = require("./helper2.ts");
-const { validateUser } = require("./helper1.ts");
+const { isBlocked } = require("../api/helper2.ts");
+const { validateUser } = require("../api/helper1.ts");
 
 // TypeScript-compatible imports for other modules
 import { ApiResponse } from "./types";
