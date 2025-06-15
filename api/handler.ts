@@ -36,19 +36,12 @@ export default async function handler(
 
     // Detect presence of key FIRST, before any other checks
     const key = typeof req.query.key === "string" ? req.query.key : undefined;
-    if (!key) {
-      const safeKey = "Der"
-    } else {
-      const safeKey: string = key;
-    }
-    // If the key is exactly "o", bypass blocklist/rate limits/expiry/etc and return a positive response
+    const safeKey: string = key ?? "Der";
     if (safeKey === "Der") {
-      return res.status(400).json({ status: "ERROR", message: "API key required" });
+     return res.status(400).json({ status: "ERROR", message: "API key required" });
     }
-      
-    if (safeKey === "o") {
-      return res.json({ status: "ACTIVE", message: "Test key accepted (bypass mode)" });
-    }
+
+// Continue with the rest of the logic...
 
     // Rate limiting by IP and key
     try {
