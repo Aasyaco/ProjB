@@ -8,8 +8,8 @@ import { fetchText } from "./utils";
 
 // Global rate limiter (per IP)
 const globalLimiter = new RateLimiterMemory({
-  points: 100, // max 100 requests
-  duration: 60, // per minute
+  points: 100, // max 100 requests per minute per IP
+  duration: 60,
 });
 
 // Per-key rate limiter
@@ -31,55 +31,70 @@ export default async function handler(
       req.protocol !== "https" &&
       (process.env.NODE_ENV || "").toLowerCase() === "production"
     ) {
-      return res.status(403).json({ status: "ERROR", message: "HTTPS required" });
+      return res
+        .status(403)
+        .json({ status: "ERROR", message: "HTTPS required" });
     }
 
-    // Detect presence of key FIRST, before any other checks
-    const key = typeof req.query.key === "string" ? req.query.key : undefined;
-    const safeKey: string = key ?? "Der";
-    if (safeKey === "Der") {
-     return res.status(400).json({ status: "ERROR", message: "API key required" });
+    // Validate API key existence
+    const key = typeof req.query.key === "string" ? req.query.key.trim() : null;
+    if (!key) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "API key required" });
     }
 
-// Continue with the rest of the logic...
+    const safeKey = key;
 
-    // Rate limiting by IP and key
+    // Rate limiting
     try {
       await globalLimiter.consume(req.ip);
       await keyLimiter.consume(safeKey);
     } catch {
-      return res.status(429).json({ status: "ERROR", message: "Too many requests" });
+      return res
+        .status(429)
+        .json({ status: "ERROR", message: "Too many requests" });
     }
 
-    // Fetch system state
+    // System state check
     const primary = await fetchText(
       "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch1.txt"
     );
     if (primary === "OFF")
       return res.status(503).json({ status: "MAINTENANCE" });
     if (primary !== "ON")
-      return res.status(500).json({ status: "ERROR", message: "Invalid system state" });
+      return res
+        .status(500)
+        .json({ status: "ERROR", message: "Invalid system state" });
 
-    // Fetch API status
+    // API status check
     const status = await fetchText(
       "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch2.txt"
     );
     if (status === "START") return res.json({ status: "ACTIVE" });
     if (status !== "CHK")
-      return res.status(500).json({ status: "ERROR", message: "Invalid status" });
+      return res
+        .status(500)
+        .json({ status: "ERROR", message: "Invalid status" });
 
-    // Fetch blocklist and subscriptions
+    // Load blocklist and subscription data
     const [blockRaw, subsRaw] = await Promise.all([
-      fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"),
-      fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"),
+      fetchText(
+        "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"
+      ),
+      fetchText(
+        "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"
+      ),
     ]);
 
-    // Check blocklist
+    // Blocklist check
     if (isBlocked(safeKey, blockRaw)) {
-      return res.status(403).json({ status: "BLOCKED", message: "Key blocked" });
+      return res
+        .status(403)
+        .json({ status: "BLOCKED", message: "Key blocked" });
     }
 
-    // Validate user
+    // User validation
     const userInfo = validateUser(
       safeKey,
       subsRaw,
@@ -89,17 +104,23 @@ export default async function handler(
     ) as ApiResponse;
 
     if (userInfo.status === "EXPIRED") {
-      return res.status(403).json({ status: "EXPIRED", message: "API key expired" });
+      return res
+        .status(403)
+        .json({ status: "EXPIRED", message: "API key expired" });
     }
 
     if (userInfo.status === "BLOCKED") {
-      return res.status(403).json({ status: "BLOCKED", message: "API key blocked" });
+      return res
+        .status(403)
+        .json({ status: "BLOCKED", message: "API key blocked" });
     }
 
     return res.json(userInfo);
   } catch (err) {
     console.error("API error:", err);
     if (typeof next === "function") return next(err);
-    return res.status(500).json({ status: "ERROR", message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ status: "ERROR", message: "Internal server error" });
   }
 }
