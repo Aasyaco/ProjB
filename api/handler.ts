@@ -1,11 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import rateLimit from "rate-limiter-flexible";
-// Use CommonJS require for native modules
-const { isBlocked } = require("../api/helper2.ts");
-const { validateUser } = require("../api/helper1.ts");
 
-// TypeScript-compatible imports for other modules
+import { isBlocked } from "./helper2";
+import { validateUser } from "./helper1";
 import { ApiResponse } from "./types";
 import { fetchText } from "./utils";
 
@@ -21,7 +19,6 @@ const keyLimiter = new rateLimit.RateLimiterMemory({
   duration: 60,
 });
 
-// Exported handler for Express or serverless environments
 export default async function handler(
   req: Request,
   res: Response,
@@ -35,17 +32,17 @@ export default async function handler(
       return res.status(403).json({ status: "ERROR", message: "HTTPS required" });
     }
 
-    // Ensure `key` is a string
+    // Get API key from query
     const key = typeof req.query.key === "string" ? req.query.key : undefined;
     if (!key) {
       return res.status(400).json({ status: "ERROR", message: "API key required" });
     }
 
-    // Rate limiting by IP
-    await globalLimiter.consume(req.ip);
+    const safeKey = key as string;
 
-    // Rate limiting by API key
-    await keyLimiter.consume(key);
+    // Rate limiting by IP and key
+    await globalLimiter.consume(req.ip);
+    await keyLimiter.consume(safeKey);
 
     // Fetch system state
     const primary = await fetchText(
@@ -70,14 +67,14 @@ export default async function handler(
       fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"),
     ]);
 
-    // Use C++ addon for blocklist check
-    if (isBlocked(key, blockRaw)) {
+    // Check blocklist
+    if (isBlocked(safeKey, blockRaw)) {
       return res.status(403).json({ status: "BLOCKED", message: "Key blocked" });
     }
 
-    // Rust addon validates user, expiry, device, and IP binding
+    // Validate user
     const userInfo: ApiResponse = validateUser(
-      key,
+      safeKey,
       subsRaw,
       blockRaw,
       req.ip,
@@ -94,9 +91,9 @@ export default async function handler(
 
     return res.json(userInfo);
   } catch (err) {
-    // Log and forward error to Express error middleware if present
     console.error("API error:", err);
     if (typeof next === "function") return next(err);
     return res.status(500).json({ status: "ERROR", message: "Internal server error" });
   }
-}
+  }
+      
