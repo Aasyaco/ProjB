@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import helmet from "helmet";
-import rateLimit from "rate-limiter-flexible";
+import { RateLimiterMemory } from "rate-limiter-flexible";
 
 import { isBlocked } from "./helper2";
 import { validateUser } from "./helper1";
@@ -8,13 +7,13 @@ import { ApiResponse } from "./types";
 import { fetchText } from "./utils";
 
 // Global rate limiter (per IP)
-const globalLimiter = new rateLimit.RateLimiterMemory({
+const globalLimiter = new RateLimiterMemory({
   points: 100, // max 100 requests
   duration: 60, // per minute
 });
 
 // Per-key rate limiter
-const keyLimiter = new rateLimit.RateLimiterMemory({
+const keyLimiter = new RateLimiterMemory({
   points: 10, // max 10 requests per key per minute
   duration: 60,
 });
@@ -28,7 +27,10 @@ export default async function handler(
 
   try {
     // Enforce HTTPS in production
-    if (req.protocol !== "https" && process.env.NODE_ENV === "production") {
+    if (
+      req.protocol !== "https" &&
+      (process.env.NODE_ENV || "").toLowerCase() === "production"
+    ) {
       return res.status(403).json({ status: "ERROR", message: "HTTPS required" });
     }
 
@@ -38,11 +40,13 @@ export default async function handler(
       return res.status(400).json({ status: "ERROR", message: "API key required" });
     }
 
-    const safeKey = key as string;
-
     // Rate limiting by IP and key
-    await globalLimiter.consume(req.ip);
-    await keyLimiter.consume(safeKey);
+    try {
+      await globalLimiter.consume(req.ip);
+      await keyLimiter.consume(key);
+    } catch {
+      return res.status(429).json({ status: "ERROR", message: "Too many requests" });
+    }
 
     // Fetch system state
     const primary = await fetchText(
@@ -68,13 +72,13 @@ export default async function handler(
     ]);
 
     // Check blocklist
-    if (isBlocked(safeKey, blockRaw)) {
+    if (isBlocked(key, blockRaw)) {
       return res.status(403).json({ status: "BLOCKED", message: "Key blocked" });
     }
 
     // Validate user
     const userInfo: ApiResponse = validateUser(
-      safeKey,
+      key,
       subsRaw,
       blockRaw,
       req.ip,
@@ -95,5 +99,4 @@ export default async function handler(
     if (typeof next === "function") return next(err);
     return res.status(500).json({ status: "ERROR", message: "Internal server error" });
   }
-  }
-      
+}
