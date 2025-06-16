@@ -4,14 +4,21 @@
  * @param blockRaw - The block list as a newline-separated string.
  * @returns True if the key is blocked, false otherwise.
  */
-export function isBlocked(key: string, blockRaw: string): boolean {
-  if (!key || typeof blockRaw !== 'string') return false;
-  // Use a Set for efficient O(1) lookups, trimming whitespace and ignoring empty lines
-  const blockSet = new Set(
-    blockRaw
-      .split('\n')
-      .map(line => line.trim())
-      .filter(Boolean)
-  );
-  return blockSet.has(key);
+export function isBlocked(
+  key: string | number | boolean | null | undefined,
+  blockRaw: string
+): boolean {
+  if (key === undefined || key === null) return false;
+  if (typeof blockRaw !== 'string' || !blockRaw.trim()) return false;
+
+  const normalizedKey = String(key).trim().toLowerCase().normalize();
+
+  const blockSet = new Set(
+    blockRaw
+      .split('\n')
+      .map(line => line.trim().toLowerCase().normalize())
+      .filter(Boolean)
+  );
+
+  return blockSet.has(normalizedKey);
 }
