@@ -38,7 +38,13 @@ export default async function handler(
 
     // Get API key from query
     const keyRaw = req.query.key;
-    const key = typeof keyRaw === "string" ? keyRaw : undefined;
+    const key: string =
+      typeof keyRaw === "string"
+        ? keyRaw
+        : Array.isArray(keyRaw) && keyRaw.length > 0
+        ? keyRaw[0]
+        : "";
+
     if (!key) {
       return res
         .status(400)
@@ -122,4 +128,4 @@ export default async function handler(
       .status(500)
       .json({ status: "ERROR", message: "Internal server error" });
   }
-              }
+      }
