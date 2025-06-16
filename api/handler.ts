@@ -8,119 +8,123 @@ import { fetchText } from "./utils";
 
 // Global rate limiter (per IP)
 const globalLimiter = new RateLimiterMemory({
-  points: 100, // max 100 requests per minute per IP
-  duration: 60,
+  points: 100,
+  duration: 60,
 });
 
 // Per-key rate limiter
 const keyLimiter = new RateLimiterMemory({
-  points: 10, // max 10 requests per key per minute
-  duration: 60,
+  points: 10,
+  duration: 60,
 });
 
 export default async function handler(
-  req: Request,
-  res: Response,
-  next: NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ) {
-  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Cache-Control", "no-store");
 
-  try {
-    // Enforce HTTPS in production
-    if (
-      req.protocol !== "https" &&
-      (process.env.NODE_ENV || "").toLowerCase() === "production"
-    ) {
-      return res
-        .status(403)
-        .json({ status: "ERROR", message: "HTTPS required" });
-    }
+  try {
+    // Enforce HTTPS in production
+    if (
+      req.protocol !== "https" &&
+      (process.env.NODE_ENV || "").toLowerCase() === "production"
+    ) {
+      return res
+        .status(403)
+        .json({ status: "ERROR", message: "HTTPS required" });
+    }
 
-    // Validate API key existence
-    const key = typeof req.query.key === "string" ? req.query.key.trim() : null;
-    if (!key) {
-      return res
-        .status(400)
-        .json({ status: "ERROR", message: "API key required" });
-    }
+    // Extract and validate key
+    let key: string | number | boolean | null | undefined = req.query.key;
 
-    const safeKey = key;
+    // Support number or boolean input from query string
+    if (Array.isArray(key)) key = key[0]; // In case of multiple query params
 
-    // Rate limiting
-    try {
-      await globalLimiter.consume(req.ip);
-      await keyLimiter.consume(safeKey);
-    } catch {
-      return res
-        .status(429)
-        .json({ status: "ERROR", message: "Too many requests" });
-    }
+    if (key === undefined || key === null || String(key).trim() === "") {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "API key required" });
+    }
 
-    // System state check
-    const primary = await fetchText(
-      "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch1.txt"
-    );
-    if (primary === "OFF")
-      return res.status(503).json({ status: "MAINTENANCE" });
-    if (primary !== "ON")
-      return res
-        .status(500)
-        .json({ status: "ERROR", message: "Invalid system state" });
+    const safeKey = String(key).trim();
 
-    // API status check
-    const status = await fetchText(
-      "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch2.txt"
-    );
-    if (status === "START") return res.json({ status: "ACTIVE" });
-    if (status !== "CHK")
-      return res
-        .status(500)
-        .json({ status: "ERROR", message: "Invalid status" });
+    // Rate limiting
+    try {
+      await globalLimiter.consume(req.ip);
+      await keyLimiter.consume(safeKey);
+    } catch {
+      return res
+        .status(429)
+        .json({ status: "ERROR", message: "Too many requests" });
+    }
 
-    // Load blocklist and subscription data
-    const [blockRaw, subsRaw] = await Promise.all([
-      fetchText(
-        "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"
-      ),
-      fetchText(
-        "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"
-      ),
-    ]);
+    // Check system status
+    const primary = await fetchText(
+      "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch1.txt"
+    );
+    if (primary === "OFF")
+      return res.status(503).json({ status: "MAINTENANCE" });
+    if (primary !== "ON")
+      return res
+        .status(500)
+        .json({ status: "ERROR", message: "Invalid system state" });
 
-    // Blocklist check
-    if (isBlocked(safeKey, blockRaw)) {
-      return res
-        .status(403)
-        .json({ status: "BLOCKED", message: "Key blocked" });
-    }
+    // Check API status
+    const status = await fetchText(
+      "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch2.txt"
+    );
+    if (status === "START") return res.json({ status: "ACTIVE" });
+    if (status !== "CHK")
+      return res
+        .status(500)
+        .json({ status: "ERROR", message: "Invalid status" });
 
-    // User validation
-    const userInfo = validateUser(
-      safeKey,
-      subsRaw,
-      blockRaw,
-      req.ip,
-      String(req.headers["user-agent"] || "")
-    ) as ApiResponse;
+    // Load block and subscription data
+    const [blockRaw, subsRaw] = await Promise.all([
+      fetchText(
+        "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"
+      ),
+      fetchText(
+        "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"
+      ),
+    ]);
 
-    if (userInfo.status === "EXPIRED") {
-      return res
-        .status(403)
-        .json({ status: "EXPIRED", message: "API key expired" });
-    }
+    // Check blocklist
+    if (isBlocked(safeKey, blockRaw)) {
+      return res
+        .status(403)
+        .json({ status: "BLOCKED", message: "Key blocked" });
+    }
 
-    if (userInfo.status === "BLOCKED") {
-      return res
-        .status(403)
-        .json({ status: "BLOCKED", message: "API key blocked" });
-    }
+    // Validate user
+    const userInfo = validateUser(
+      safeKey,
+      subsRaw,
+      blockRaw,
+      req.ip,
+      String(req.headers["user-agent"] || "")
+    ) as ApiResponse;
 
-    return res.json(userInfo);
-  } catch (err) {
-    console.error("API error:", err);
-    if (typeof next === "function") return next(err);
-    return res
-      .status(500)
-      .json({ status: "ERROR", message: "Internal server error" });
-  }
-}
+    if (userInfo.status === "EXPIRED") {
+      return res
+        .status(403)
+        .json({ status: "EXPIRED", message: "API key expired" });
+    }
+
+    if (userInfo.status === "BLOCKED") {
+      return res
+        .status(403)
+        .json({ status: "BLOCKED", message: "API key blocked" });
+    }
+
+    return res.json(userInfo);
+  } catch (err) {
+    console.error("API error:", err);
+    if (typeof next === "function") return next(err);
+    return res
+      .status(500)
+      .json({ status: "ERROR", message: "Internal server error" });
+  }
+                }
