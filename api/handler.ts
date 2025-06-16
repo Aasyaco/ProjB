@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { RateLimiterMemory } from "rate-limiter-flexible";
+import { ParsedQs } from "qs";
 
 import { isBlocked } from "./helper2";
 import { validateUser } from "./helper1";
@@ -17,6 +18,21 @@ const keyLimiter = new RateLimiterMemory({
   points: 10,
   duration: 60,
 });
+
+// Helper to extract key as string or undefined
+function extractKey(keyParam: string | ParsedQs | string[] | ParsedQs[] | undefined): string | undefined {
+  if (typeof keyParam === "string") {
+    return keyParam;
+  }
+  if (Array.isArray(keyParam) && keyParam.length > 0) {
+    // If multiple keys are provided, take the first one as string if possible
+    const first = keyParam[0];
+    if (typeof first === "string") {
+      return first;
+    }
+  }
+  return undefined;
+}
 
 export default async function handler(
   req: Request,
@@ -37,13 +53,7 @@ export default async function handler(
     }
 
     // Get API key from query
-    const keyRaw = req.query.key;
-    const key: string =
-      typeof keyRaw === "string"
-        ? keyRaw
-        : Array.isArray(keyRaw) && keyRaw.length > 0
-        ? keyRaw[0]
-        : "";
+    const key = extractKey(req.query.key);
 
     if (!key) {
       return res
@@ -128,4 +138,4 @@ export default async function handler(
       .status(500)
       .json({ status: "ERROR", message: "Internal server error" });
   }
-      }
+}
