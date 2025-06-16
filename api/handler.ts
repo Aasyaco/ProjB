@@ -37,19 +37,18 @@ export default async function handler(
     }
 
     // Get API key from query
-    const key = typeof req.query.key === "string" ? req.query.key : undefined;
+    const keyRaw = req.query.key;
+    const key = typeof keyRaw === "string" ? keyRaw : undefined;
     if (!key) {
       return res
         .status(400)
         .json({ status: "ERROR", message: "API key required" });
     }
-    // After above check, key is guaranteed to be string.
-    const safeKey = key as string;
 
-    // Rate limiting by IP and key
+    // Rate limiting by IP and key -- key is always a string here
     try {
       await globalLimiter.consume(req.ip);
-      await keyLimiter.consume(safeKey);
+      await keyLimiter.consume(key);
     } catch {
       return res
         .status(429)
@@ -87,19 +86,16 @@ export default async function handler(
       ),
     ]);
 
-    // Check blocklist
-    if (isBlocked(safeKey, blockRaw)) {
+    // Check blocklist (key is string)
+    if (isBlocked(key, blockRaw)) {
       return res
         .status(403)
         .json({ status: "BLOCKED", message: "Key blocked" });
     }
 
     // Validate user
-    // If validateUser returns a type that's not assignable to ApiResponse,
-    // you should fix validateUser to return proper ApiResponse.
-    // For now, we force-cast and validate status at runtime.
     const userInfo = validateUser(
-      safeKey,
+      key,
       subsRaw,
       blockRaw,
       req.ip,
