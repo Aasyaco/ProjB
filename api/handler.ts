@@ -18,18 +18,6 @@ const keyLimiter = new RateLimiterMemory({
   duration: 60,
 });
 
-// Helper function to normalize API key
-function getSafeKey(req: Request): string {
-  const rawKey = req.query.key;
-  if (Array.isArray(rawKey)) {
-    return (rawKey[0] || "demo-key").toString().trim();
-  }
-  if (typeof rawKey === "string" && rawKey.trim()) {
-    return rawKey.trim();
-  }
-  return "demo-key";
-}
-
 export default async function handler(
   req: Request,
   res: Response,
@@ -38,6 +26,7 @@ export default async function handler(
   res.setHeader("Cache-Control", "no-store");
 
   try {
+    // Enforce HTTPS in production
     if (
       req.protocol !== "https" &&
       (process.env.NODE_ENV || "").toLowerCase() === "production"
@@ -47,8 +36,17 @@ export default async function handler(
         .json({ status: "ERROR", message: "HTTPS required" });
     }
 
-    const safeKey = getSafeKey(req);
+    // Get API key from query
+    const key = typeof req.query.key === "string" ? req.query.key : undefined;
+    if (!key) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "API key required" });
+    }
+    // After above check, key is guaranteed to be string.
+    const safeKey = key as string;
 
+    // Rate limiting by IP and key
     try {
       await globalLimiter.consume(req.ip);
       await keyLimiter.consume(safeKey);
@@ -58,6 +56,7 @@ export default async function handler(
         .json({ status: "ERROR", message: "Too many requests" });
     }
 
+    // Fetch system state
     const primary = await fetchText(
       "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch1.txt"
     );
@@ -68,6 +67,7 @@ export default async function handler(
         .status(500)
         .json({ status: "ERROR", message: "Invalid system state" });
 
+    // Fetch API status
     const status = await fetchText(
       "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch2.txt"
     );
@@ -77,6 +77,7 @@ export default async function handler(
         .status(500)
         .json({ status: "ERROR", message: "Invalid status" });
 
+    // Fetch blocklist and subscriptions
     const [blockRaw, subsRaw] = await Promise.all([
       fetchText(
         "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"
@@ -86,12 +87,17 @@ export default async function handler(
       ),
     ]);
 
+    // Check blocklist
     if (isBlocked(safeKey, blockRaw)) {
       return res
         .status(403)
         .json({ status: "BLOCKED", message: "Key blocked" });
     }
 
+    // Validate user
+    // If validateUser returns a type that's not assignable to ApiResponse,
+    // you should fix validateUser to return proper ApiResponse.
+    // For now, we force-cast and validate status at runtime.
     const userInfo = validateUser(
       safeKey,
       subsRaw,
@@ -120,4 +126,4 @@ export default async function handler(
       .status(500)
       .json({ status: "ERROR", message: "Internal server error" });
   }
-}
+              }
