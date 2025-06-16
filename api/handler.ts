@@ -8,13 +8,13 @@ import { fetchText } from "./utils";
 
 // Global rate limiter (per IP)
 const globalLimiter = new RateLimiterMemory({
-  points: 100,
+  points: 100, // max 100 requests per minute per IP
   duration: 60,
 });
 
 // Per-key rate limiter
 const keyLimiter = new RateLimiterMemory({
-  points: 10,
+  points: 10, // max 10 requests per key per minute
   duration: 60,
 });
 
@@ -36,21 +36,18 @@ export default async function handler(
         .json({ status: "ERROR", message: "HTTPS required" });
     }
 
-    // Extract and validate key
-    let key: string | number | boolean | null | undefined = req.query.key;
+    // Extract API key or use fallback
+    let rawKey = req.query.key;
+    if (Array.isArray(rawKey)) rawKey = rawKey[0];
 
-    // Support number or boolean input from query string
-    if (Array.isArray(key)) key = key[0]; // In case of multiple query params
-
-    if (key === undefined || key === null || String(key).trim() === "") {
-      return res
-        .status(400)
-        .json({ status: "ERROR", message: "API key required" });
+    let key = (typeof rawKey === "string" ? rawKey.trim() : "").toString();
+    if (!key) {
+      key = "demo-key"; // fallback value
     }
 
-    const safeKey = String(key).trim();
+    const safeKey = key;
 
-    // Rate limiting
+    // Apply rate limiting
     try {
       await globalLimiter.consume(req.ip);
       await keyLimiter.consume(safeKey);
@@ -127,4 +124,5 @@ export default async function handler(
       .status(500)
       .json({ status: "ERROR", message: "Internal server error" });
   }
-                }
+             }
+      
