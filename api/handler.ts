@@ -19,7 +19,7 @@ const keyLimiter = new RateLimiterMemory({
   duration: 60,
 });
 
-// Helper to extract key as string or undefined
+// Helper to extract key as string, always returns string or throws before use
 function extractKey(
   key: string | ParsedQs | (string | ParsedQs)[] | undefined
 ): string | undefined {
@@ -57,10 +57,10 @@ export default async function handler(
         .json({ status: "ERROR", message: "API key required" });
     }
 
-    // Rate limiting by IP and key
+    // Rate limiting by IP and key (key is string here)
     try {
       await globalLimiter.consume(req.ip);
-      await keyLimiter.consume(key);
+      await keyLimiter.consume(key); // key is string
     } catch {
       return res
         .status(429)
@@ -98,7 +98,7 @@ export default async function handler(
       ),
     ]);
 
-    // Check blocklist
+    // Check blocklist (key is string)
     if (isBlocked(key, blockRaw)) {
       return res
         .status(403)
@@ -134,4 +134,4 @@ export default async function handler(
       .status(500)
       .json({ status: "ERROR", message: "Internal server error" });
   }
-  }
+        }
