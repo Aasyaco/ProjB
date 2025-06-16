@@ -21,7 +21,7 @@ const keyLimiter = new RateLimiterMemory({
 
 // Helper to extract key as string or undefined
 function extractKey(
-  key: string | ParsedQs | string[] | ParsedQs[] | undefined
+  key: string | ParsedQs | (string | ParsedQs)[] | undefined
 ): string | undefined {
   if (typeof key === "string") return key;
   if (Array.isArray(key) && key.length > 0) {
@@ -134,4 +134,4 @@ export default async function handler(
       .status(500)
       .json({ status: "ERROR", message: "Internal server error" });
   }
-}
+  }
