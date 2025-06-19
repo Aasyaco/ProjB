@@ -90,15 +90,14 @@ export default async function handler(
         .json({ status: "ERROR", message: "Invalid status" });
 
     // Fetch blocklist and subscriptions
-    const [blockRaw, subsRaw] = await Promise.all([
-      fetchText(
-        "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"
-      ),
-      fetchText(
-        "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"
-      ),
-    ]);
+    const blockRaw = await fetchText(
+      "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"
+    );
 
+    const subsRaw = await fetchText(
+      "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"
+    );
+ 
     // Check blocklist (key is string)
     if (isBlocked(key, blockRaw)) {
       return res
