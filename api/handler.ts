@@ -60,7 +60,7 @@ export default async function handler(
     // At this point, key is a string and never undefined!
     // Rate limiting by IP and key
     try {
-      await globalLimiter.consume(req.ip);
+      await globalLimiter.consume(req.ip ?? "");
       await keyLimiter.consume(key);
     } catch {
       return res
@@ -111,7 +111,7 @@ export default async function handler(
       key,
       subsRaw,
       blockRaw,
-      req.ip,
+      req.ip ?? "",
       String(req.headers["user-agent"] || "")
     ) as ApiResponse;
 
