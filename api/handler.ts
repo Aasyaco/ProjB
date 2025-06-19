@@ -1,27 +1,35 @@
 import { Request, Response, NextFunction } from "express";
-import helmet from "helmet";
-import rateLimit from "rate-limiter-flexible";
-// Use CommonJS require for native modules
-const { isBlocked } = require("../native/cpp-addon/build/Release/addon.node");
-const { validateUser } = require("../native/rust-validator/index.node");
+import { RateLimiterMemory } from "rate-limiter-flexible";
+import { ParsedQs } from "qs";
 
-// TypeScript-compatible imports for other modules
+import { isBlocked } from "./helper2";
+import { validateUser } from "./helper1";
 import { ApiResponse } from "./types";
 import { fetchText } from "./utils";
 
 // Global rate limiter (per IP)
-const globalLimiter = new rateLimit.RateLimiterMemory({
-  points: 100, // max 100 requests
-  duration: 60, // per minute
-});
-
-// Per-key rate limiter
-const keyLimiter = new rateLimit.RateLimiterMemory({
-  points: 10, // max 10 requests per key per minute
+const globalLimiter = new RateLimiterMemory({
+  points: 100,
   duration: 60,
 });
 
-// Exported handler for Express or serverless environments
+// Per-key rate limiter
+const keyLimiter = new RateLimiterMemory({
+  points: 10,
+  duration: 60,
+});
+
+// Helper to extract key as string or undefined
+function extractKey(
+  key: string | ParsedQs | (string | ParsedQs)[] | undefined
+): string | undefined {
+  if (typeof key === "string") return key;
+  if (Array.isArray(key) && key.length > 0) {
+    if (typeof key[0] === "string") return key[0];
+  }
+  return undefined;
+}
+
 export default async function handler(
   req: Request,
   res: Response,
@@ -31,21 +39,34 @@ export default async function handler(
 
   try {
     // Enforce HTTPS in production
-    if (req.protocol !== "https" && process.env.NODE_ENV === "production") {
-      return res.status(403).json({ status: "ERROR", message: "HTTPS required" });
+    if (
+      req.protocol !== "https" &&
+      (process.env.NODE_ENV || "").toLowerCase() === "production"
+    ) {
+      return res
+        .status(403)
+        .json({ status: "ERROR", message: "HTTPS required" });
     }
 
-    // Ensure `key` is a string
-    const key = typeof req.query.key === "string" ? req.query.key : undefined;
+    // Get API key from query
+    const key = extractKey(req.query.key);
+
     if (!key) {
-      return res.status(400).json({ status: "ERROR", message: "API key required" });
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "API key required" });
     }
 
-    // Rate limiting by IP
-    await globalLimiter.consume(req.ip);
-
-    // Rate limiting by API key
-    await keyLimiter.consume(key);
+    // At this point, key is a string and never undefined!
+    // Rate limiting by IP and key
+    try {
+      await globalLimiter.consume(req.ip ?? "");
+      await keyLimiter.consume(key);
+    } catch {
+      return res
+        .status(429)
+        .json({ status: "ERROR", message: "Too many requests" });
+    }
 
     // Fetch system state
     const primary = await fetchText(
@@ -54,7 +75,9 @@ export default async function handler(
     if (primary === "OFF")
       return res.status(503).json({ status: "MAINTENANCE" });
     if (primary !== "ON")
-      return res.status(500).json({ status: "ERROR", message: "Invalid system state" });
+      return res
+        .status(500)
+        .json({ status: "ERROR", message: "Invalid system state" });
 
     // Fetch API status
     const status = await fetchText(
@@ -62,41 +85,53 @@ export default async function handler(
     );
     if (status === "START") return res.json({ status: "ACTIVE" });
     if (status !== "CHK")
-      return res.status(500).json({ status: "ERROR", message: "Invalid status" });
+      return res
+        .status(500)
+        .json({ status: "ERROR", message: "Invalid status" });
 
     // Fetch blocklist and subscriptions
-    const [blockRaw, subsRaw] = await Promise.all([
-      fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"),
-      fetchText("https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"),
-    ]);
+    const blockRaw = await fetchText(
+      "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"
+    );
 
-    // Use C++ addon for blocklist check
+    const subsRaw = await fetchText(
+      "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"
+    );
+ 
+    // Check blocklist (key is string)
     if (isBlocked(key, blockRaw)) {
-      return res.status(403).json({ status: "BLOCKED", message: "Key blocked" });
+      return res
+        .status(403)
+        .json({ status: "BLOCKED", message: "Key blocked" });
     }
 
-    // Rust addon validates user, expiry, device, and IP binding
-    const userInfo: ApiResponse = validateUser(
+    // Validate user
+    const userInfo = validateUser(
       key,
       subsRaw,
       blockRaw,
-      req.ip,
+      req.ip ?? "",
       String(req.headers["user-agent"] || "")
-    );
+    ) as ApiResponse;
 
     if (userInfo.status === "EXPIRED") {
-      return res.status(403).json({ status: "EXPIRED", message: "API key expired" });
+      return res
+        .status(403)
+        .json({ status: "EXPIRED", message: "API key expired" });
     }
 
     if (userInfo.status === "BLOCKED") {
-      return res.status(403).json({ status: "BLOCKED", message: "API key blocked" });
+      return res
+        .status(403)
+        .json({ status: "BLOCKED", message: "API key blocked" });
     }
 
     return res.json(userInfo);
   } catch (err) {
-    // Log and forward error to Express error middleware if present
     console.error("API error:", err);
     if (typeof next === "function") return next(err);
-    return res.status(500).json({ status: "ERROR", message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ status: "ERROR", message: "Internal server error" });
   }
-}
+        }

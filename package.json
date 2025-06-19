@@ -2,24 +2,27 @@
   "name": "projb-server",
   "version": "1.0.0",
   "private": true,
-  "description": "Server with TypeScript, JavaScript, C++/Rust native modules, and runtime dependencies",
-  "main": "dist/index.js",
+  "description": "Server using TypeScript for Vercel serverless functions",
   "type": "commonjs",
   "engines": {
     "node": ">=18.17.0"
   },
   "scripts": {
-    "preinstall": "python3 -c \"import distutils\" 2>/dev/null || python3 -m ensurepip --upgrade && python3 -m pip install --upgrade setuptools",
-    "install:rust": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
-    "build:native": "npm run build:cpp && npm run build:rust",
-    "build:cpp": "export HOME=/vercel && cd native/cpp-addon && npm install && npm run rebuild",
-    "build:rust": "cd native/rust-validator/src && ~/.cargo/bin/cargo build --release",
-    "build:ts": "tsc -p tsconfig.json",
-    "build": "npm run install:rust && npm run build:native && npm run build:ts",
-    "rebuild": "node-gyp rebuild",
+    "build": "tsc",
     "dev": "ts-node-dev --respawn --transpile-only api/index.ts",
-    "start": "node dist/index.js"
+    "start": "node api/index.js",
+    "clean": "rm -rf dist"
   },
+  "main": "api/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aasyaco/ProjB.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Aasyaco/ProjB/issues"
+  },
+  "homepage": "https://github.com/Aasyaco/ProjB#readme",
   "dependencies": {
     "axios": "^1.6.8",
     "express": "^4.18.2",
@@ -29,7 +32,6 @@
   "devDependencies": {
     "@types/express": "^4.17.17",
     "@types/node": "^20.4.2",
-    "node-gyp": "^9.3.1",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.1.3"

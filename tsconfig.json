@@ -1,20 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es2020",                  // Output JavaScript version
-    "module": "commonjs",                // Module system for Node.js
-    "moduleResolution": "node",          // Resolves modules like Node.js
-    "outDir": "dist",                    // Folder for compiled JS output
-    "rootDir": "api",                    // Source TS folder
-    "strict": true,                      // Enable strict type checking
-    "esModuleInterop": true,             // Compatibility for ES Modules
-    "forceConsistentCasingInFileNames": true, // Enforce consistent file casing
-    "skipLibCheck": true,                // Skip type checking for declaration files
-    "sourceMap": true,                   // Generate source maps for debugging
-    "resolveJsonModule": true,           // Allows importing JSON files
-    "noUnusedLocals": false,              // Warn about unused local variables
-    "noUnusedParameters": false,          // Warn about unused function parameters
-    "strictNullChecks": false            // Skip null and undefined type checks
+    "target": "ES2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "outDir": "dist"
   },
-  "include": ["api/**/*.ts"],            // Include all TypeScript files in api/
-  "exclude": ["node_modules", "dist"]    // Exclude node_modules and output folder
+  "include": ["api"]
 }
