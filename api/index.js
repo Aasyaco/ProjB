@@ -3,6 +3,8 @@ const path = require("path");
 const handler = require("./handler").default;
 
 const app = express();
+app.set('trust proxy', 1); // Important for HTTPS detection in Vercel/proxy environments
+
 const PORT = process.env.PORT || 3000;
 
 // Serve static files if you have a public directory
