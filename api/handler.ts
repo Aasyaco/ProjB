@@ -43,6 +43,7 @@ export default async function handler(
       req.protocol !== "https" &&
       (process.env.NODE_ENV || "").toLowerCase() === "production"
     ) {
+      console.log("handler: HTTPS required but request is not HTTPS");
       return res
         .status(403)
         .json({ status: "ERROR", message: "HTTPS required" });
@@ -50,8 +51,10 @@ export default async function handler(
 
     // Get API key from query
     const key = extractKey(req.query.key);
+    console.log("handler: extracted key =", key);
 
     if (!key) {
+      console.log("handler: API key missing");
       return res
         .status(400)
         .json({ status: "ERROR", message: "API key required" });
@@ -62,7 +65,9 @@ export default async function handler(
     try {
       await globalLimiter.consume(req.ip ?? "");
       await keyLimiter.consume(key);
+      console.log("handler: rate limit checks passed for IP and key");
     } catch {
+      console.log("handler: rate limit exceeded");
       return res
         .status(429)
         .json({ status: "ERROR", message: "Too many requests" });
@@ -72,34 +77,47 @@ export default async function handler(
     const primary = await fetchText(
       "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch1.txt"
     );
+    console.log("handler: system state (primary) =", primary);
+
     if (primary === "OFF")
       return res.status(503).json({ status: "MAINTENANCE" });
-    if (primary !== "ON")
+    if (primary !== "ON") {
+      console.log("handler: invalid system state", primary);
       return res
         .status(500)
         .json({ status: "ERROR", message: "Invalid system state" });
+    }
 
     // Fetch API status
     const status = await fetchText(
       "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch2.txt"
     );
+    console.log("handler: API status =", status);
+
     if (status === "START") return res.json({ status: "ACTIVE" });
-    if (status !== "CHK")
+    if (status !== "CHK") {
+      console.log("handler: invalid API status", status);
       return res
         .status(500)
         .json({ status: "ERROR", message: "Invalid status" });
+    }
 
     // Fetch blocklist and subscriptions
     const blockRaw = await fetchText(
       "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/bchk.txt"
     );
+    console.log("handler: blockRaw =", blockRaw);
 
     const subsRaw = await fetchText(
       "https://cdn.jsdelivr.net/gh/George-Codr/Database@main/ch3.txt"
     );
- 
+    console.log("handler: subsRaw =", subsRaw);
+
     // Check blocklist (key is string)
-    if (isBlocked(key, blockRaw)) {
+    const blocked = isBlocked(key, blockRaw);
+    console.log("handler: isBlocked =", blocked);
+    if (blocked) {
+      console.log("handler: key is blocked by isBlocked");
       return res
         .status(403)
         .json({ status: "BLOCKED", message: "Key blocked" });
@@ -113,14 +131,17 @@ export default async function handler(
       req.ip ?? "",
       String(req.headers["user-agent"] || "")
     ) as ApiResponse;
+    console.log("handler: userInfo =", userInfo);
 
     if (userInfo.status === "EXPIRED") {
+      console.log("handler: userInfo status is EXPIRED");
       return res
         .status(403)
         .json({ status: "EXPIRED", message: "API key expired" });
     }
 
     if (userInfo.status === "BLOCKED") {
+      console.log("handler: userInfo status is BLOCKED");
       return res
         .status(403)
         .json({ status: "BLOCKED", message: "API key blocked" });
@@ -134,4 +155,4 @@ export default async function handler(
       .status(500)
       .json({ status: "ERROR", message: "Internal server error" });
   }
-        }
+      }
